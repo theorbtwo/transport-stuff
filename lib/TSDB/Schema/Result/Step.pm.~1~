@@ -1,0 +1,24 @@
+package TSDB::Schema::Result::Step;
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
+__PACKAGE__->load_components(qw/Ordered/);
+__PACKAGE__->table('steps');
+__PACKAGE__->add_columns(
+                         jouney_id => { data_type => 'integer' },
+                         step_order => { data_type => 'integer' },
+                         departure_date => { data_type => 'date' },
+                         train_uid => { data_type => 'char', size => 6 },
+                         departure_tiploc => { data_type => 'char', size => 7},
+                         arrival_tiploc => { data_type => 'char', size => 7},
+                         );
+__PACKAGE__->set_primary_key('journey_id', 'step_order');
+__PACKAGE__->grouping_column(qw/jouney_id/);
+__PACKAGE__->position_column('step_order');
+
+
+
+'I would walk 500 miles. And I would walk 500 more. Just to be that man who walked a thousand miles to fall down at your door';

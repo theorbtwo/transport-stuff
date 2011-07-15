@@ -1,0 +1,9 @@
+package TSDB::Schema::Result::ScheduleLocation;
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
+__PACKAGE__->table('schedule_locations');
+__PACKAGE__->add_columns(
+                         

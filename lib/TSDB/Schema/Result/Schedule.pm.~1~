@@ -1,0 +1,114 @@
+package TSDB::Schema::Result::Schedule;
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
+=head1 NAME TSDB::Schema::Result::Schedule
+
+=head1 DESCRIPTION
+
+Contains train schedule definitions, these need to be kept ordered as
+later definitions replace parts of earlier ones, eg: A train runs from
+Jan to Dec on Mon-Fri, but a later definition may define the schedule
+for Jun-Jul to skip a station, be a bus instead, etc.
+
+=cut
+
+__PACKAGE__->load_components(qw/Ordered/);
+__PACKAGE__-->table('schedules');
+__PACKAGE__->add_columns(
+                         train_uid => {
+                                       data_type => 'char',
+                                       size => 6,
+                                      },
+                         schedule_order => {
+                                            data_type => 'integer',
+                                           },
+                         runs_from => {
+                                       data_type => 'timestamp',
+                                      },
+                         runs_to => {
+                                     data_type => 'timestamp',
+                                     },
+                         days_run => {
+                                      data_type => 'char',
+                                      size => 7,
+                                      },
+                         bh_running => {
+                                        data_type => 'char',
+                                        size => 1,
+                                        },
+                         status => {
+                                    data_type => 'char',
+                                    size => 1,
+                                   },
+                         category => {
+                                      data_type => 'char',
+                                      size => 2,
+                                      },
+                         train_identity => {
+                                            data_type => 'char',
+                                            size => 4,
+                                            },
+                         headcode => {
+                                      data_type => 'char',
+                                      size => 4,
+                                      },
+                         course_indicator => {
+                                              data_type => 'char',
+                                              size => 1,
+                                              },
+                         service_code => {
+                                          data_type => 'char',
+                                          size => 8,
+                                          },
+                         portion_id => {
+                                        data_type => 'char',
+                                        size => 1,
+                                        },
+                         power_type => {
+                                        data_type => 'char',
+                                        size => 3,
+                                        },
+                         timing_load => {
+                                         data_type => 'char',
+                                         size => 4,
+                                         },
+                         speed => {
+                                   data_type => 'char',
+                                   size => 3,
+                                   },
+                         operating_characteristics => {
+                                                       data_type => 'char',
+                                                       size => 6,
+                                                       },
+                         train_class => {
+                                         data_type => 'char',
+                                         size => 1,
+                                         },
+                         sleepers => {
+                                      data_type => 'char',
+                                      size => 1,
+                                      },
+                         reservations => {
+                                          data_type => 'char',
+                                          size => 1,
+                                          },
+                         connection_indicator => {
+                                                  data_type => 'char',
+                                                  size => 1,
+                                                  },
+                         # Catering_code is really a has-many -- each schedule can have up to four codes.
+#                         catering_code => {
+#                                           data_type => 'char',
+#                                           size => 4,
+#                                          },
+                         
+                         
+                                    
+                       );
+
+__PACKAGE__->grouping_columns(qw/train_uid/);
+__PACKAGE__->position_column('schedule_order');

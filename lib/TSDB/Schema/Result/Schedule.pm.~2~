@@ -1,0 +1,154 @@
+package TSDB::Schema::Result::Schedule;
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
+=head1 NAME TSDB::Schema::Result::Schedule
+
+=head1 DESCRIPTION
+
+Contains train schedule definitions, these need to be kept ordered as
+later definitions replace parts of earlier ones, eg: A train runs from
+Jan to Dec on Mon-Fri, but a later definition may define the schedule
+for Jun-Jul to skip a station, be a bus instead, etc.
+
+This consists of both train characteristics (the actual vehicle), and
+values which apply to its schedule on a particular route. There is
+also a 'change en route' (CR) record which describes how the train
+characteristics will change at the next location reached. If we import
+the CR data we should probably split 'Schedule' into 'Train' and
+'Schedule' and apply the CRs to the 'Train' somehow.
+
+
+=cut
+
+__PACKAGE__->load_components(qw/Ordered InflateColumn::DateTime/);
+__PACKAGE__->table('schedules');
+__PACKAGE__->add_columns(
+                         train_uid => {
+                                       data_type => 'char',
+                                       size => 6,
+                                      },
+                         schedule_order => {
+                                            data_type => 'integer',
+                                           },
+                         runs_from => {
+                                       data_type => 'timestamp',
+                                      },
+                         runs_to => {
+                                     data_type => 'timestamp',
+                                     },
+                         days_run => {
+                                      data_type => 'char',
+                                      size => 7,
+                                      },
+                         bh_running => {
+                                        data_type => 'char',
+                                        size => 1,
+                                        is_nullable => 1,
+                                        },
+                         status => {
+                                    data_type => 'char',
+                                    size => 1,
+                                   },
+                         category => {
+                                      data_type => 'char',
+                                      size => 2,
+                                      },
+                         train_identity => {
+                                            data_type => 'char',
+                                            size => 4,
+                                            },
+                         headcode => {
+                                      data_type => 'char',
+                                      size => 4,
+                                      is_nullable => 1,
+                                      },
+                         course_indicator => {
+                                              data_type => 'char',
+                                              size => 1,
+                                              },
+                         service_code => {
+                                          data_type => 'char',
+                                          size => 8,
+                                          },
+                         portion_id => {
+                                        data_type => 'char',
+                                        size => 1,
+                                        is_nullable => 1,
+                                        },
+                         power_type => {
+                                        data_type => 'char',
+                                        size => 3,
+                                        is_nullable => 1,
+                                        },
+                         timing_load => {
+                                         data_type => 'char',
+                                         size => 3+4,
+                                         is_nullable => 1,
+                                         },
+                         speed => {
+                                   data_type => 'integer',
+                                   is_nullable => 1,
+                                   },
+                         operating_characteristics => {
+                                                       data_type => 'char',
+                                                       size => 6,
+                                                       is_nullable => 1,
+                                                       },
+                         train_class => {
+                                         data_type => 'char',
+                                         size => 1,
+                                         is_nullable => 1,
+                                         },
+                         sleepers => {
+                                      data_type => 'char',
+                                      size => 1,
+                                      is_nullable => 1,
+                                      },
+                         reservations => {
+                                          data_type => 'char',
+                                          size => 1,
+                                          is_nullable => 1,
+                                          },
+                         connection_indicator => {
+                                                  data_type => 'char',
+                                                  size => 1,
+                                                  is_nullable => 1,
+                                                  },
+                         # Catering_code is really a has-many -- each schedule can have up to four codes.
+#                         catering_code => {
+#                                           data_type => 'char',
+#                                           size => 4,
+#                                          },
+                         service_branding => {
+                                              data_type => 'char',
+                                              size => 4,
+                                              is_nullable => 1,
+                                              },
+                         # Basic schedule extra details
+                         uic_code => {
+                                      data_type => 'char',
+                                      size => 5,
+                                      is_nullable => 1,
+                                      },
+                         atoc_code => {
+                                       data_type => 'char',
+                                       size => 2,
+                                       },
+                         ats_code => {
+                                      data_type => 'char',
+                                      size => 1,
+                                      },
+                       );
+
+__PACKAGE__->grouping_column(qw/train_uid/);
+__PACKAGE__->position_column('schedule_order');
+
+__PACKAGE__->set_primary_key(qw/train_uid schedule_order/);
+__PACKAGE__->has_many('catering_codes', 'TSDB::Schema::Result::CateringCodes', { 'foreign.train_uid' => 'self.train_uid', 'foreign.schedule_order' => 'self.schedule_order'});
+__PACKAGE__->has_many('locations', 'TSDB::Schema::Result::ScheduleLocation', { 'foreign.train_uid' => 'self.train_uid', 'foreign.schedule_order' => 'self.schedule_order'});
+
+'done';

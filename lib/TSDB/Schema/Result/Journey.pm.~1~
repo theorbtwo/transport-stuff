@@ -1,0 +1,16 @@
+package TSDB::Schema::Result::Journey;
+
+use strict;
+use warnings;
+
+__PACKAGE__->table('journeys');
+__PACKAGE__->add_columns(
+                         id => { data_type => 'integer', is_auto_increment => 1 },
+                         name => { data_type => 'varchar', size => 255 },
+                         user_id => { data_type => 'integer'},
+                        );
+__PACKAGE__->set_primary_key('id');
+__PACKAGE__->belongs_to('user', 'TSDB::Schema::Result::User', 'user_id');
+__PACKAGE__->has_many('steps', 'TSDB::Schema::Result::Step', 'journey_id');
+
+'the road goes ever on from the door where it began';
