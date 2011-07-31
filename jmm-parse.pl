@@ -4,6 +4,7 @@ use warnings;
 use strict;
 use Data::Dump::Streamer 'Dump', 'Dumper';
 use DateTime;
+use Time::HiRes 'time';
 use TSDB::Schema;
 $|=1;
 
@@ -75,6 +76,82 @@ my $train_category = {
                      };
 
 my $formattings = {
+                   # Header line, section 4.1.
+                   'HD' => [
+                            # [mainframe_ident => 20, ],  -- offically, this is one long field.
+                            [junk_1 => 5],
+                            [user_1 => 6],
+                            [junk_2 => 3],
+                            [date_gen => 6, 'yymmdd'],
+                            [extract_date => 6, 'ddmmyy'],
+                            [extract_time => 4, 'hhmm'],
+                            # current-file-ref
+                            [user_2 => 6],
+                            [user_rotation => 1], # a..z, repeats every 26 extracts.
+                            # last-file-ref
+                            [user_3 => 6],
+                            [user_prev_rotation => 1],
+                            [update_or_full => 1],
+                            [generator_version => 1],
+                            [extract_start_date => 6, 'ddmmyy'],
+                            [extract_end_date => 6, 'ddmmyy'],
+                            [spare => 20],
+                           ],
+
+                   # TIPLOC insert, section 4.11.  Documentation is rather sketchy.
+                   'TI' => [
+                            [tiploc_code => 7, 'tiploc'],
+                            [capitals_identification => 2],
+                            [nlc => 6], # "nalco", "national location code"
+                            [nlc_check_character => 1],
+                            [tps_description => 26],
+                            [stanox => 5],
+                            [po_mcp_code => 4], # not used
+                            [crs_code => 3],
+                            [capri_description => 16],
+                            [spare => 8],
+                           ],
+
+                   # AA association, section 4.10
+                   'AA' => [
+                            # N=new, D=delete, R=revise
+                            [transaction_type => 1],
+                            # the docs use the terms "main train" and
+                            # "associated train", which I find
+                            # confusing.
+                            [main_train_uid => 6],
+                            [secondary_train_uid => 6],
+                            [association_start_date => 6, 'yymmdd'],
+                            # 999999 if ongoing (no end date).
+                            [association_end_date => 6, 'yymmdd'],
+                            [days_of_week => 7, 'days_of_week'],
+                            # JJ, VV, or NP.
+                            # - JJ=Join
+                            # - VV=divide
+                            # - NP=next (?)
+                            [assoc_cat_for_main => 1,],
+                            [assoc_cat_for_secondary => 1,],
+                            # S=standard (same day).
+                            # N=next day (across midnight).
+                            # P=previous day
+                            [assoc_date_ind => 1],
+                            # tiploc where this association applies (where it happens)?
+                            [assoc_location => 7],
+                            # The documentaton on these is *very* confusing.
+                            [location_suffix_for_main => 1],
+                            [location_suffix_for_secondary => 1],
+                            [unused => 1], # unused, always T.
+                            # P, passenger use
+                            # O, operating use only
+                            [assoc_type => 1],
+                            [spare => 31],
+                            # C - short term plan cancel
+                            # N - new short term plan
+                            # P - perm assoc
+                            # O - short term plan overlay of perm assoc.
+                            [stp_indicator => 1],
+                           ],
+
                    # Basic Schedule
                    'BS' => [
                             [transaction_type => 1],
@@ -229,11 +306,21 @@ my $formattings = {
                   };
 
 
-my $schema = TSDB::Schema->connect('dbi:SQLite:/tmp/tsdb.sqlite') or die;
+my $schema = TSDB::Schema->connect('dbi:SQLite:/home/theorb/tsdb.sqlite') or die;
 
 local $/="\cM\cJ";
 my $schedule = {};
+my $start_time = time;
+my $last_report_time = time;
+my $line_n = 0;
 while (my $rest = <>) {
+  if (time - $last_report_time > 5) {
+    printf "Processed %d lines in %d seconds = %f lines/second\n",
+      $line_n, time-$start_time, $line_n / (time - $start_time);
+    $last_report_time = time;
+  }
+  $line_n++;
+
   chomp $rest;
 
   # There seems to be some leading garbage at the front of the file.
@@ -241,7 +328,7 @@ while (my $rest = <>) {
     $rest =~ s/.*\n//s;
   }
 
-  print "Raw: $rest\n";
+  # print "Raw: $rest\n";
 
   my ($type) = substr($rest, 0, 2, '');
 
@@ -275,12 +362,34 @@ while (my $rest = <>) {
         $value = $bits;
       }
 
-      when ('yymmdd') {
+      when ('ddmmyy') {
         $value =~ m/(..)(..)(..)/ or die;
-        $value = DateTime->new(year=>2000+$1, month=>$2, day=>$3, time_zone=>'Europe/London');
+        $value = DateTime->new(year=>2000+$3, month=>$2, day=>$1, time_zone=>'Europe/London');
+      }
+      
+      when ('yymmdd') {
+        if ($value eq '999999') {
+          $value = undef;
+        } else {
+          $value =~ m/(..)(..)(..)/ or die;
+          $value = DateTime->new(year=>2000+$1, month=>$2, day=>$3, time_zone=>'Europe/London');
+        }
       }
       
       when ('hhmmh') {
+        if ($value =~ m/^ +/) {
+          $value = undef;
+        } else {
+          $value =~ m/(..)(..)(h?)/ or die;
+          # This creates a datetime object, which isn't the right way to do time-of-day -- should do a duration object instead.
+          #$value = DateTime->new(year => 0, hour => $1, minute=>$2, second=>$3 ? 30 : 0);
+          $value  = $1 * 60*60;
+          $value += $2 * 60;
+          $value += 30 if $3;
+        }
+      }
+
+      when ('hhmm') {
         if ($value =~ m/^ +/) {
           $value = undef;
         } else {
@@ -470,8 +579,13 @@ while (my $rest = <>) {
     when ('CR') {
       # For the time being, we ignore change-en-route.
     }
+    when (['TI', 'AA']) {
+      # ignore this for now.
+    }
     default {
-      die "don't know how to stuff record type $type";
+      Dump $data;
+
+      # warn "don't know how to stuff record type $type";
     }
   }
 }
