@@ -1,0 +1,17 @@
+<html>
+ <head><title>Choose train</title></head>
+ <body>
+ <h2>Choose train</h2>
+
+ [% WHILE (train = trains.next) %]
+ <div>
+   <span><!-- [% USE Dumper; Dumper.dump(train.get_columns) %] --></span>
+   <span>[% train.sec_to_hms(train.departure()) %]</span>
+   <span>to [% FOR dest IN train.forward_destinations.all %]
+    [% dest.tiploc_code %]
+   [% END %] </span>
+ <div>
+ [% END %]
+ 
+ </body>
+</html>

@@ -1,0 +1,12 @@
+<html>
+ <head><title>Find a train</title></head>
+ <body>
+ <h2>Find a train</h2>
+ <form name="choose-train" method="get" action="">
+   <div <label for="tiploc">TIPLOC<input type="text" name="tiploc" id="tiploc" value="" /></label></div>
+   <div <label for="date">DATE<input type="text" name="date" id="date" value="" /></label></div>
+   <input type="submit" value="Search"/>
+   
+ </form>
+ </body>
+</html>
