@@ -39,6 +39,7 @@ __PACKAGE__->add_columns(
                                       },
                          runs_to => {
                                      data_type => 'timestamp',
+                                     is_nullable => 1,
                                      },
                          days_run => {
                                       data_type => 'char',
@@ -134,32 +135,31 @@ __PACKAGE__->add_columns(
                                       size => 5,
                                       is_nullable => 1,
                                       },
-
-# =item atoc_code
-
-# The two-letter code of the train operating company, see
-# L<http://www.atoc.org/clientfiles/File/RSPDocuments/20070801.pdf> page II
-# (appendix A).
-
-# =cut
-
                          atoc_code => {
                                        data_type => 'char',
                                        size => 2,
                                        },
 
-# =item ats_code
 
-# Y - subject to performance monitoring
-# N - not subject to performance monitoring
-
-# =cut
 
                          ats_code => {
                                       data_type => 'char',
                                       size => 1,
                                       },
                        );
+
+=head2 atoc_code
+
+The two-letter code of the train operating company, see
+L<http://www.atoc.org/clientfiles/File/RSPDocuments/20070801.pdf> page II
+(appendix A).
+
+=head2 ats_code
+
+Y - subject to performance monitoring
+N - not subject to performance monitoring
+
+=cut
 
 __PACKAGE__->grouping_column(qw/train_uid/);
 __PACKAGE__->position_column('schedule_order');

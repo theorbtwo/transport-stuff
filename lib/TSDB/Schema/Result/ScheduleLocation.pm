@@ -39,5 +39,20 @@ __PACKAGE__->has_many('activities', 'TSDB::Schema::Result::LocationActivity', { 
                                                                                 'foreign.location_order' => 'self.location_order'});
 __PACKAGE__->belongs_to('station', 'TSDB::Schema::Result::Station', { 'foreign.tiploc' => 'self.tiploc_code' } );
 
+# Fixme: not really a method, and not really anything to do with schedulelocation!
+sub sec_to_hms {
+  my ($self, $linear_s) = @_;
+  my ($h, $m, $s) = (int($linear_s / (60*60)),
+                     int($linear_s / 60) % 60,
+                     $linear_s % 60
+                    );
+  sprintf "% 2d:%02d:%02d", $h, $m, $s;
+}
+
+# If you get on this train at this point, where can you get off?
+sub forward_destinations {
+  $_[0]->next_siblings->setting_down_passengers;
+}
+
 'where-ever you are, you are here';
 
