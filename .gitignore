@@ -1,0 +1,9 @@
+*~
+Makefile.PL.new
+inc/
+tfl/
+log/
+data/
+tsdbexplorer/
+#*#
+.#*
