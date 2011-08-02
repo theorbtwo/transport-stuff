@@ -100,14 +100,14 @@ my $formattings = {
 
                    # TIPLOC insert, section 4.11.  Documentation is rather sketchy.
                    'TI' => [
-                            [tiploc_code => 7, 'tiploc'],
+                            [tiploc => 7, 'tiploc'],
                             [capitals_identification => 2],
                             [nlc => 6], # "nalco", "national location code"
                             [nlc_check_character => 1],
                             [tps_description => 26],
                             [stanox => 5],
                             [po_mcp_code => 4], # not used
-                            [crs_code => 3],
+                            [crs => 3],
                             [capri_description => 16],
                             [spare => 8],
                            ],
@@ -165,12 +165,13 @@ my $formattings = {
                               ' ' => 'Runs on bank holidays',
                               'X' => 'Does not run on specified Bank Holiday Mondays',
                               'E' => 'Does not run on specified Edinburgh Holiday dates', # (no longer used).
-                              'G' => 'Does not run on specified Glasgow Holiday dates',
-                             }
+                              'G' => 'Does not run on specified Glasgow Holiday dates', 
+                            }
                             ],
                             [status => 1, 'enum',
                              {'P'=>'Passenger & Parcels (Permanent)',
                               '1'=>'Passenger & Parcels (Short Term Plan)',
+                              '2'=>'Feight (Short Term Plan)',
                               'B'=>'Bus (Permanent)',
                               '5'=>'Bus (Short Term Plan)',
                               'T'=>'Trip (Permanent)',
@@ -192,14 +193,15 @@ my $formattings = {
                             [timing_load => 4, 'timing_load'],
                             # in mph
                             [speed => 3],
-                            [operating_characteristics => 6, 'enum',
+                            [operating_characteristics => 6, 'split',
+                             [1, 'characteristic'],
                              # FIXME: actually a split, 1.
-                             {
-                              '      ' => undef,
-                              'D     ' => 'DOO (Coaching stock)',
-                              'DQ    ' => 'DOO, runs as required',
-                              'Q     ' => 'runs as required',
-                             }
+                             #{
+                             # '      ' => undef,
+                             # 'D     ' => 'DOO (Coaching stock)',
+                             # 'DQ    ' => 'DOO, runs as required',
+                             # 'Q     ' => 'runs as required',
+                             #}
                             ],
                             [train_class => 1, 'enum',
                              {
@@ -222,6 +224,7 @@ my $formattings = {
                             ],
                             [service_branding => 4],
                             [spare => 1],
+                            [stp_indicator => 1],
                            ],
                    #  Basic Schedule Extra Details
                    'BX' => [
@@ -306,19 +309,23 @@ my $formattings = {
                   };
 
 
-my $schema = TSDB::Schema->connect('dbi:SQLite:/home/theorb/tsdb.sqlite') or die;
+#my $schema = TSDB::Schema->connect('dbi:SQLite:/home/theorb/tsdb.sqlite') or die;
+my $schema = TSDB::Schema->connect('dbi:mysql:dbname=tsdb;host=localhost', 'root', '' ) or die;
 
 local $/="\cM\cJ";
 my $schedule = {};
 my $start_time = time;
 my $last_report_time = time;
 my $line_n = 0;
+
 while (my $rest = <>) {
   if (time - $last_report_time > 5) {
     printf "Processed %d lines in %d seconds = %f lines/second\n",
       $line_n, time-$start_time, $line_n / (time - $start_time);
     $last_report_time = time;
   }
+
+  #exit if $line_n >= $terminate_at;
   $line_n++;
 
   chomp $rest;
@@ -364,7 +371,8 @@ while (my $rest = <>) {
 
       when ('ddmmyy') {
         $value =~ m/(..)(..)(..)/ or die;
-        $value = DateTime->new(year=>2000+$3, month=>$2, day=>$1, time_zone=>'Europe/London');
+        # $value = DateTime->new(year=>2000+$3, month=>$2, day=>$1, time_zone=>'Europe/London');
+        $value = sprintf "%4d-%02d-%02d %02d:%02d:%02d", 2000+$3, $2, $1, 0, 0, 0;
       }
       
       when ('yymmdd') {
@@ -372,7 +380,8 @@ while (my $rest = <>) {
           $value = undef;
         } else {
           $value =~ m/(..)(..)(..)/ or die;
-          $value = DateTime->new(year=>2000+$1, month=>$2, day=>$3, time_zone=>'Europe/London');
+          #$value = DateTime->new(year=>2000+$1, month=>$2, day=>$3, time_zone=>'Europe/London');
+          $value = sprintf "%4d-%02d-%02d %02d:%02d:%02d", 2000+$1, $2, $3, 0, 0, 0;
         }
       }
       
@@ -403,8 +412,10 @@ while (my $rest = <>) {
       }
       
       when ('nh') {
-        if ($value =~ m/^ +$/) {
+        if ($value eq '  ') {
           $value = 0;
+        } elsif ($value eq ' H') {
+          $value = 30;
         } else {
           $value =~ m/^(\d+| )([H ]?)$/ or die "Invalid value '$value' for an nh column";
           $value = 60*($1||0) + 30*($2 eq 'H');
@@ -549,7 +560,8 @@ while (my $rest = <>) {
   delete $data->{spare};
 
   given ($type) {
-    when ('BS') {
+    # ZZ so we don't forget to flush the last line.
+    when (['BS', 'ZZ']) {
       if (keys %$schedule) {
         #Dump $schedule;
 
@@ -562,7 +574,18 @@ while (my $rest = <>) {
         die unless $schedule->{transaction_type} eq 'N';
         delete $schedule->{transaction_type};
 
-        $schema->resultset('Schedule')->create($schedule);
+        $@='';
+        if (eval {
+          $schema->storage->txn_do(sub {
+                                     $schema->resultset('Schedule')->create($schedule);
+                                     1;
+                                   })
+        } != 1) {
+          my $error = $@;
+          my_dump($schedule);
+          print "First line of next schedule is $.\n";
+          die $error;
+        }
       }
       
       # Done dealing with the old one, time to overwrite it.
@@ -579,13 +602,64 @@ while (my $rest = <>) {
     when ('CR') {
       # For the time being, we ignore change-en-route.
     }
-    when (['TI', 'AA']) {
-      # ignore this for now.
-    }
-    default {
-      Dump $data;
+    when ('TI') {
+      # my $capped_tiploc = $data->{tiploc};
 
-      # warn "don't know how to stuff record type $type";
+      # given ($data->{capitals_identification}) {
+      #   when (0) {
+      #     $capped_tiploc = ucfirst $capped_tiploc;
+      #   }
+
+      #   default {
+      #     Dump $data;
+      #     die "Don't know what to do with capitals_identification ".$data->{capitals_identification};
+      #   }
+      # }
+      
+      $schema->storage->txn_do
+        (sub {
+           $schema->resultset('Station')
+             ->update_or_create(
+                                {
+                                 tiploc => $data->{tiploc},
+                                 crs => $data->{crs},
+                                 nlc => $data->{nlc},
+                                 tps_description => $data->{tps_description},
+                                 stanox => $data->{stanox},
+                                 capri_description => $data->{capri_description},
+                                });
+         });
+    }
+    
+    when ('AA') {
+      # Ignore associations for a bit.
+    }
+
+    default {
+      my_dump($data);
+
+      warn "don't know how to stuff record type $type";
     }
   }
+}
+
+sub my_dump {
+  my ($thing) = @_;
+  my $dds = Dump();
+
+  $dds->Freezer(DateTime => \&datetime_freezer);
+  $dds->To(\*STDOUT);
+  $dds->Data($thing);
+  $dds->Out;
+}
+
+sub datetime_freezer {
+  my ($dt) = @_;
+  my $proxy = $dt . "";
+  my $thaw = '';
+  my $postdump = '';
+  
+  print "proxy=$proxy, thaw=$thaw, postdump=$postdump\n";
+
+  return ($proxy, $thaw, $postdump);
 }
