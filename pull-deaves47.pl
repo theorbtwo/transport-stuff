@@ -12,7 +12,7 @@ $|=1;
 
 for my $letter ('a'..'z') {
   my $url = "http://deaves47.users.btopenworld.com/stations/station$letter.htm";
-  my $file = "deaves47/station$letter.htm";
+  my $file = "data/deaves47/station$letter.htm";
 
   my $res = mirror($url, $file);
   print "$file: $res\n";
