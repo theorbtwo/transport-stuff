@@ -28,8 +28,7 @@ __PACKAGE__->add_columns(
                          performance_allowance => {data_type => 'float', is_nullable => 1},
                         );
 
-# FIXME: This implies that it isn't valid to have a circular schedule?
-__PACKAGE__->set_primary_key(qw/train_uid schedule_order tiploc_code/);
+__PACKAGE__->set_primary_key(qw/train_uid schedule_order location_order/);
 __PACKAGE__->position_column('location_order');
 __PACKAGE__->grouping_column(qw/train_uid schedule_order/);
 

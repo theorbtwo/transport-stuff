@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Sat Jul 30 22:03:29 2011
+-- Created on Mon Aug  1 11:45:07 2011
 -- 
 
 BEGIN TRANSACTION;
@@ -28,12 +28,12 @@ CREATE TABLE schedules (
   runs_to timestamp,
   days_run char(7) NOT NULL,
   bh_running char(1),
-  status char(1) NOT NULL,
-  category char(2) NOT NULL,
-  train_identity char(4) NOT NULL,
+  status char(1),
+  category char(2),
+  train_identity char(4),
   headcode char(4),
   course_indicator char(1) NOT NULL,
-  service_code char(8) NOT NULL,
+  service_code char(8),
   portion_id char(1),
   power_type char(3),
   timing_load char(7),
@@ -44,9 +44,10 @@ CREATE TABLE schedules (
   reservations char(1),
   connection_indicator char(1),
   service_branding char(4),
+  stp_indicator char(1) NOT NULL,
   uic_code char(5),
-  atoc_code char(2) NOT NULL,
-  ats_code char(1) NOT NULL,
+  atoc_code char(2),
+  ats_code char(1),
   PRIMARY KEY (train_uid, schedule_order)
 );
 
@@ -72,11 +73,11 @@ DROP TABLE stations;
 
 CREATE TABLE stations (
   tiploc char(7) NOT NULL,
-  crs char(3) NOT NULL,
+  crs char(3),
   nlc char(6) NOT NULL,
-  tps_description char(26) NOT NULL,
+  tps_description char(26),
   stanox char(5) NOT NULL,
-  capri_description char(16) NOT NULL,
+  capri_description char(16),
   PRIMARY KEY (tiploc)
 );
 
@@ -145,7 +146,7 @@ CREATE TABLE schedule_locations (
   engineering_allowance float,
   pathing_allowance float,
   performance_allowance float,
-  PRIMARY KEY (train_uid, schedule_order, tiploc_code),
+  PRIMARY KEY (train_uid, schedule_order, location_order),
   FOREIGN KEY(train_uid) REFERENCES schedules(train_uid),
   FOREIGN KEY(tiploc_code) REFERENCES stations(tiploc)
 );

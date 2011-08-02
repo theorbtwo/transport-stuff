@@ -53,14 +53,17 @@ __PACKAGE__->add_columns(
                          status => {
                                     data_type => 'char',
                                     size => 1,
+                                    is_nullable => 1,
                                    },
                          category => {
                                       data_type => 'char',
                                       size => 2,
+                                      is_nullable => 1,
                                       },
                          train_identity => {
                                             data_type => 'char',
                                             size => 4,
+                                            is_nullable => 1,
                                             },
                          headcode => {
                                       data_type => 'char',
@@ -74,6 +77,7 @@ __PACKAGE__->add_columns(
                          service_code => {
                                           data_type => 'char',
                                           size => 8,
+                                          is_nullable => 1,
                                           },
                          portion_id => {
                                         data_type => 'char',
@@ -120,15 +124,17 @@ __PACKAGE__->add_columns(
                                                   is_nullable => 1,
                                                   },
                          # Catering_code is really a has-many -- each schedule can have up to four codes.
-#                         catering_code => {
-#                                           data_type => 'char',
-#                                           size => 4,
-#                                          },
                          service_branding => {
                                               data_type => 'char',
                                               size => 4,
                                               is_nullable => 1,
                                               },
+
+                         stp_indicator => {
+                                           data_type => 'char',
+                                           size => 1
+                                          },
+
                          # Basic schedule extra details
                          uic_code => {
                                       data_type => 'char',
@@ -138,6 +144,7 @@ __PACKAGE__->add_columns(
                          atoc_code => {
                                        data_type => 'char',
                                        size => 2,
+                                       is_nullable => 1,
                                        },
 
 
@@ -145,6 +152,7 @@ __PACKAGE__->add_columns(
                          ats_code => {
                                       data_type => 'char',
                                       size => 1,
+                                      is_nullable => 1,
                                       },
                        );
 

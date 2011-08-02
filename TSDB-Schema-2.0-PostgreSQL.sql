@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Sat Jul 30 22:03:30 2011
+-- Created on Mon Aug  1 11:45:07 2011
 -- 
 --
 -- Table: lines
@@ -23,12 +23,12 @@ CREATE TABLE "schedules" (
   "runs_to" timestamp,
   "days_run" character(7) NOT NULL,
   "bh_running" character(1),
-  "status" character(1) NOT NULL,
-  "category" character(2) NOT NULL,
-  "train_identity" character(4) NOT NULL,
+  "status" character(1),
+  "category" character(2),
+  "train_identity" character(4),
   "headcode" character(4),
   "course_indicator" character(1) NOT NULL,
-  "service_code" character(8) NOT NULL,
+  "service_code" character(8),
   "portion_id" character(1),
   "power_type" character(3),
   "timing_load" character(7),
@@ -39,9 +39,10 @@ CREATE TABLE "schedules" (
   "reservations" character(1),
   "connection_indicator" character(1),
   "service_branding" character(4),
+  "stp_indicator" character(1) NOT NULL,
   "uic_code" character(5),
-  "atoc_code" character(2) NOT NULL,
-  "ats_code" character(1) NOT NULL,
+  "atoc_code" character(2),
+  "ats_code" character(1),
   PRIMARY KEY ("train_uid", "schedule_order")
 );
 
@@ -65,11 +66,11 @@ CREATE TABLE "station_locations" (
 DROP TABLE "stations" CASCADE;
 CREATE TABLE "stations" (
   "tiploc" character(7) NOT NULL,
-  "crs" character(3) NOT NULL,
+  "crs" character(3),
   "nlc" character(6) NOT NULL,
-  "tps_description" character(26) NOT NULL,
+  "tps_description" character(26),
   "stanox" character(5) NOT NULL,
-  "capri_description" character(16) NOT NULL,
+  "capri_description" character(16),
   PRIMARY KEY ("tiploc"),
   CONSTRAINT "stations_crs" UNIQUE ("crs")
 );
@@ -131,7 +132,7 @@ CREATE TABLE "schedule_locations" (
   "engineering_allowance" numeric,
   "pathing_allowance" numeric,
   "performance_allowance" numeric,
-  PRIMARY KEY ("train_uid", "schedule_order", "tiploc_code")
+  PRIMARY KEY ("train_uid", "schedule_order", "location_order")
 );
 CREATE INDEX "schedule_locations_idx_train_uid_schedule_order" on "schedule_locations" ("train_uid", "schedule_order");
 CREATE INDEX "schedule_locations_idx_tiploc_code" on "schedule_locations" ("tiploc_code");

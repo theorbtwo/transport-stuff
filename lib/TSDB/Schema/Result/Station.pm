@@ -8,11 +8,12 @@ use base 'DBIx::Class::Core';
 __PACKAGE__->table('stations');
 __PACKAGE__->add_columns(
                          tiploc      => { data_type => 'char', size => 7 },
-                         crs         => { data_type => 'char', size => 3 },
+                         # Aachen, for example, appears to have no crs.
+                         crs         => { data_type => 'char', size => 3, is_nullable => 1 },
                          nlc         => { data_type => 'char', size => 6 },
-                         tps_description => { data_type => 'char', size => 26 },
+                         tps_description => { data_type => 'char', size => 26, is_nullable => 1 },
                          stanox      => { data_type => 'char', size => 5 },
-                         capri_description => { data_type => 'char', size => 16 },
+                         capri_description => { data_type => 'char', size => 16, is_nullable => 1 },
                         );
 
 __PACKAGE__->set_primary_key('tiploc');
